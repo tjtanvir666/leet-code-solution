@@ -1,0 +1,741 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Problem-Solving Playbook (Python) - Detailed</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Chosen Palette: Warm Neutrals (Stone, with Teal accent) -->
+    <!-- Application Structure Plan: A single-page application with a fixed sidebar navigation for quick access to topics. The content is organized into thematic sections corresponding to the report's parts. This structure was chosen because the document is a reference guide; users need to jump to specific topics like "Dynamic Programming" or "Heaps" quickly, rather than scrolling linearly. The main content area uses cards and collapsible accordions to make the dense information digestible and less intimidating for beginners. This enhances usability by allowing users to focus on one concept at a time. -->
+    <!-- Visualization & Content Choices:
+        - Part 1 (Complexity): Goal: Inform & Compare. Method: Cards for each Big O notation, plus a Chart.js line chart to visually compare growth rates. Justification: A visual chart is far more effective at demonstrating the difference between N^2 and log N than text alone.
+        - Part 2 (Data Structures): Goal: Organize & Inform. Method: Grid of styled cards. Interaction: "Copy Code" button. Justification: Card layout is scannable and familiar.
+        - Part 3 (Paradigms): Goal: Organize & Compare. Method: Collapsible accordion sections. Interaction: Click to expand/collapse. Justification: Prevents overwhelming the user with a massive wall of text.
+        - Part 4 (Tricks): Goal: Organize & Inform. Method: Grid of styled cards. Interaction: "Copy Code" button. Justification: Card layout is scannable and familiar for quick reference.
+        - Part 5 (Strategy): Goal: Organize. Method: Styled step-by-step list with icons. Justification: Breaks down the process into actionable, easy-to-follow steps.
+        - Library/Method: TailwindCSS for styling, Chart.js for visualization, Vanilla JS for interactivity (scrolling, accordions, copy-to-clipboard).
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        @import url('https://rsms.me/inter/inter.css');
+        html { font-family: 'Inter', sans-serif; }
+        .sidebar-link { transition: all 0.2s ease-in-out; }
+        .sidebar-link:hover, .sidebar-link.active {
+            background-color: #0d9488; /* teal-600 */
+            color: #ffffff;
+            transform: translateX(4px);
+        }
+        .content-card {
+            background-color: white;
+            border: 1px solid #e7e5d4; /* stone-200 */
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05);
+            transition: box-shadow 0.3s ease-in-out;
+            height: 100%; /* Ensure cards in grid have uniform height */
+            display: flex;
+            flex-direction: column;
+        }
+        .content-card:hover { box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -2px rgb(0 0 0 / 0.1); }
+        .code-block {
+            background-color: #1c1917; /* stone-900 */
+            color: #f5f5f4; /* stone-100 */
+            padding: 1rem;
+            border-radius: 0.5rem;
+            position: relative;
+            font-family: 'Fira Code', 'JetBrains Mono', monospace; /* Monospace font for code */
+            font-size: 0.875rem; /* text-sm */
+            overflow-x: auto; /* Allow horizontal scrolling for wide code */
+        }
+        .code-block pre {
+            white-space: pre-wrap; /* Wrap long lines */
+            word-break: break-all;
+        }
+        .copy-btn {
+            position: absolute;
+            top: 0.5rem;
+            right: 0.5rem;
+            background-color: #44403c; /* stone-700 */
+            color: #f5f5f4;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.375rem;
+            font-size: 0.75rem; /* text-xs */
+            cursor: pointer;
+            transition: background-color 0.2s ease-in-out;
+        }
+        .copy-btn:hover { background-color: #0d9488; /* teal-600 */ }
+        .accordion-content { max-height: 0; overflow: hidden; transition: max-height 0.5s ease-in-out; }
+        .chart-container { position: relative; width: 100%; max-width: 700px; margin-left: auto; margin-right: auto; height: 300px; max-height: 400px; }
+        @media (min-width: 768px) { .chart-container { height: 350px; } }
+        /* Responsive adjustments for sidebar and main content */
+        @media (max-width: 767px) {
+            .md\:fixed { position: fixed; }
+            .md\:h-screen { height: 100vh; }
+            .md\:translate-x-0 { transform: translateX(0); }
+            .md\:-translate-x-full { transform: translateX(-100%); }
+            .md\:ml-64 { margin-left: 0; }
+        }
+    </style>
+</head>
+<body class="bg-stone-50 text-stone-800">
+
+    <div class="flex flex-col md:flex-row">
+        <!-- Sidebar Navigation -->
+        <aside id="sidebar" class="w-full md:w-64 bg-stone-800 text-stone-100 p-4 md:fixed md:h-screen transition-transform -translate-x-full md:translate-x-0 z-20">
+            <h1 class="text-2xl font-bold mb-4 text-white">Python Playbook</h1>
+            <nav id="nav-menu" class="space-y-1">
+                <a href="#part1" class="sidebar-link block py-2 px-3 rounded-md">Part 1: The Basics</a>
+                <a href="#part2" class="sidebar-link block py-2 px-3 rounded-md">Part 2: Data Structures</a>
+                <a href="#part3" class="sidebar-link block py-2 px-3 rounded-md">Part 3: Paradigms</a>
+                <a href="#part4" class="sidebar-link block py-2 px-3 rounded-md">Part 4: Handy Tricks</a>
+                <a href="#part5" class="sidebar-link block py-2 px-3 rounded-md">Part 5: The Strategy</a>
+            </nav>
+        </aside>
+
+        <!-- Mobile Header -->
+        <header class="md:hidden bg-stone-800 text-white p-4 flex justify-between items-center sticky top-0 z-10">
+            <h1 class="text-xl font-bold">Python Playbook</h1>
+            <button id="menu-toggle" class="p-2">
+                <span class="text-2xl">☰</span>
+            </button>
+        </header>
+
+        <!-- Main Content -->
+        <main class="md:ml-64 p-4 md:p-8 w-full">
+            <div id="intro" class="mb-12">
+                <h2 class="text-4xl font-extrabold text-stone-900 mb-4">Your Problem-Solving Playbook</h2>
+                <p class="text-lg text-stone-600">Welcome, aspiring problem-solver! 🎉 You've embarked on an exciting journey into the world of algorithms and data structures. It might seem daunting at first, but think of it like learning to play a new sport. You need to understand the rules (problem statement), master different moves (data structures), and learn strategies (algorithm paradigms) to win the game (solve the problem efficiently).</p>
+                <p class="text-lg text-stone-600">This document is your personalized cheat sheet and roadmap, specifically tailored for Python programmers. We'll break down complex concepts into simple, understandable pieces, just as if I were teaching you face-to-face. Let's get started!</p>
+            </div>
+
+            <!-- Part 1: The Basics -->
+            <section id="part1" class="mb-16 scroll-mt-20">
+                <h3 class="text-3xl font-bold mb-6 border-b-2 border-teal-500 pb-2">Part 1: The Basics - How Computers "Think" About Efficiency</h3>
+                <p class="mb-8 text-stone-600">Before diving into complex algorithms, it's crucial to understand how we measure their performance. We use "Big O Notation" to describe how an algorithm's runtime (Time Complexity) or memory usage (Space Complexity) scales with the size of the input data.</p>
+                <div class="chart-container mb-12">
+                    <canvas id="bigOChart"></canvas>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="big-o-cards">
+                    <!-- Big O Cards (Time Complexity) will be dynamically inserted here by JS -->
+                </div>
+
+                <div class="content-card p-6 mt-10">
+                    <h4 class="text-2xl font-bold mb-3 text-stone-900">Space Complexity (The "Memory Usage" of Your Code)</h4>
+                    <p class="text-stone-600 mb-4">Space complexity tells you how much **extra memory** your algorithm needs as the input size grows. We usually talk about "auxiliary space," which means the memory used *beyond* the input itself.</p>
+                    <p class="text-stone-600 mb-4 font-bold">Why it's important:</p>
+                    <p class="text-stone-600 mb-4">If your algorithm uses too much memory, it can crash or slow down the system, especially for large inputs.</p>
+                    <p class="text-stone-600 mb-4 font-bold">Common Notations:</p>
+                    <p class="text-stone-600 mb-4">Similar to time complexity, using Big O. O(1) space is ideal (constant memory), while O(N) means memory grows with input.</p>
+                    <p class="text-stone-700 mt-4 text-sm"><a href="https://www.geeksforgeeks.org/space-complexity-of-algorithms/" target="_blank" class="text-teal-600 hover:underline">Learn More about Space Complexity</a></p>
+                </div>
+            </section>
+
+            <!-- Part 2: Data Structures -->
+            <section id="part2" class="mb-16 scroll-mt-20">
+                <h3 class="text-3xl font-bold mb-6 border-b-2 border-teal-500 pb-2">Part 2: Your Algorithmic Toolkit - Data Structures</h3>
+                <p class="mb-8 text-stone-600">Data structures are specialized formats for organizing, processing, retrieving, and storing data. Choosing the right tool for the job is a critical step in designing an efficient algorithm. Below are the fundamental structures you'll use constantly.</p>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8" id="data-structures-grid">
+                     <!-- Data Structure cards inserted by JS -->
+                </div>
+            </section>
+
+            <!-- Part 3: Algorithm Paradigms -->
+            <section id="part3" class="mb-16 scroll-mt-20">
+                <h3 class="text-3xl font-bold mb-6 border-b-2 border-teal-500 pb-2">Part 3: The Playbook - Algorithm Paradigms</h3>
+                 <p class="mb-8 text-stone-600">Paradigms are general strategies for designing algorithms. Recognizing which paradigm fits a problem is a key skill. Think of these as different game plans you can deploy based on the situation.</p>
+                <div id="paradigms-accordion" class="space-y-4">
+                    <!-- Accordion items inserted by JS -->
+                </div>
+            </section>
+
+            <!-- Part 4: Handy Tricks -->
+            <section id="part4" class="mb-16 scroll-mt-20">
+                <h3 class="text-3xl font-bold mb-6 border-b-2 border-teal-500 pb-2">Part 4: Handy Tricks & Techniques</h3>
+                <p class="mb-8 text-stone-600">Beyond the big paradigms, many clever techniques can help optimize solutions. These are your "secret weapons" for specific scenarios.</p>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8" id="tricks-grid">
+                    <!-- Tricks cards inserted by JS -->
+                </div>
+            </section>
+
+            <!-- Part 5: The Strategy -->
+            <section id="part5" class="mb-16 scroll-mt-20">
+                 <h3 class="text-3xl font-bold mb-6 border-b-2 border-teal-500 pb-2">Part 5: Your LeetCode Strategy - How to Solve a Problem</h3>
+                 <p class="mb-8 text-stone-600">Now, let's put it all together into a step-by-step process you can follow when tackling any problem on LeetCode or in an interview.</p>
+                 <div id="strategy-steps" class="space-y-6">
+                    <!-- Strategy steps inserted by JS -->
+                 </div>
+            </section>
+        </main>
+    </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+
+    // --- Data ---
+    const bigOData = [
+        {
+            name: 'O(1) - Constant Time',
+            analogy: 'Instantly grabbing a book from a known shelf.',
+            meaning: 'The operation takes the same amount of time regardless of input size.',
+            why_important: 'The fastest possible runtime, ideal for any operation.',
+            example: 'Accessing an element in a Python `list` by its index (e.g., `my_list[5]`).',
+            learnMoreLink: 'https://www.geeksforgeeks.org/analysis-of-algorithms-set-1-asymptotic-analysis/',
+            color: '#2dd4bf'
+        },
+        {
+            name: 'O(log N) - Logarithmic Time',
+            analogy: 'Finding a word in a dictionary by halving the search space.',
+            meaning: 'The time required roughly halves with each step. Very efficient for large datasets.',
+            why_important: 'Significantly faster than linear for large inputs, often seen in search algorithms.',
+            example: 'Binary Search on a sorted Python `list`.',
+            learnMoreLink: 'https://www.khanacademy.org/computing/computer-science/algorithms/binary-search/a/logarithmic-time',
+            color: '#34d399'
+        },
+        {
+            name: 'O(N) - Linear Time',
+            analogy: 'Checking every book on a shelf one by one.',
+            meaning: 'The time taken grows directly proportional to the input size.',
+            why_important: 'Often the best possible for problems that require examining every input element at least once.',
+            example: 'Iterating through a Python `list` once (e.g., using a `for` loop) to find a specific value, or summing all elements.',
+            learnMoreLink: 'https://www.hackerearth.com/practice/basic-programming/complexity-analysis/time-and-space-complexity/tutorial/',
+            color: '#facc15'
+        },
+        {
+            name: 'O(N log N) - Linearithmic Time',
+            analogy: 'Sorting a pile of books by dividing and merging.',
+            meaning: 'A very efficient sorting or complex searching behavior.',
+            why_important: 'Considered optimal for comparison-based sorting algorithms and common in many efficient algorithms.',
+            example: 'Python\'s built-in `sort()` method or `sorted()` function (which use Timsort, a hybrid algorithm that is O(N log N)). Merge Sort, Quick Sort (average case).',
+            learnMoreLink: 'https://stackoverflow.com/questions/2307283/what-does-o-n-log-n-mean',
+            color: '#fb923c'
+        },
+        {
+            name: 'O(N²)- Quadratic Time',
+            analogy: 'Comparing every book to every other book.',
+            meaning: 'The time taken grows with the square of the input size. Often seen with nested loops.',
+            why_important: 'Acceptable for small inputs, but quickly becomes too slow as N grows. Often the complexity of brute-force solutions.',
+            example: `A brute-force approach that uses two nested \`for\` loops:\n\`\`\`python\nfor i in range(n):\n    for j in range(i + 1, n):\n        # Do something with pair (i, j)\n        pass\n\`\`\``,
+            learnMoreLink: 'https://www.bigocheatsheet.com/#:~:text=O(N%5E2)%20Quadratic,-Loops%20through%20every&text=O(N%5E2)%20represents%20an%20algorithm,elements%20in%20a%20two%2Ddimensional',
+            color: '#f87171'
+        },
+        {
+            name: 'O(2ⁿ) - Exponential Time',
+            analogy: 'Trying every single combination of a lock.',
+            meaning: 'The time taken doubles with each additional item in the input. Gets incredibly slow very quickly.',
+            why_important: 'Generally impractical for large N. Often indicates a problem can be optimized with DP or a different approach.',
+            example: `Naive recursive solutions for Fibonacci:\n\`\`\`python\ndef fib_naive(n):\n    if n <= 1:\n        return n\n    return fib_naive(n-1) + fib_naive(n-2)\n\`\`\``,
+            learnMoreLink: 'https://www.interviewcake.com/article/java/exponential-time-complexity',
+            color: '#ef4444'
+        },
+        {
+            name: 'O(N!) - Factorial Time',
+            analogy: 'Trying every single possible way to line up N friends for a photo.',
+            meaning: 'The time taken grows by multiplying by each new input size. Impractically slow for even small N.',
+            why_important: 'Almost never acceptable for practical N. Typically seen in brute-force permutation problems.',
+            example: 'Generating all permutations of a `list` recursively.',
+            learnMoreLink: 'https://www.bigocheatsheet.com/#:~:text=O(N!)%20Factorial,-Adds%20a%20loop%20for&text=O(N!)%20represents%20an%20algorithm,incredibly%20quickly%20for%20larger%20input',
+            color: '#dc2626'
+        },
+    ];
+
+    const dsData = [
+        {
+            name: 'Lists (Python\'s "Arrays") & Strings',
+            icon: '�',
+            description: 'In Python, a `list` is a versatile, ordered, and mutable collection of items. While not true arrays (like in C++ or Java), they function similarly for many algorithmic problems. You can quickly go to any item if you know its number (its "index"). Strings are immutable sequences of characters.',
+            when_to_use: 'When you need an ordered collection of items; when you need fast access to elements by their position (index); when working with sequences of characters (strings).',
+            key_techniques: 'Two Pointers, Sliding Window, Prefix Sums.',
+            example_code: `my_list = [1, 2, 3]\nmy_string = "abc"\nprint(my_list[1]) # Output: 2`,
+            learnMoreLink: 'https://www.geeksforgeeks.org/introduction-to-arrays/'
+        },
+        {
+            name: 'Linked Lists',
+            icon: '🔗',
+            description: 'Unlike `lists` in Python, linked lists are like a treasure hunt. Each "node" (piece of treasure) not only holds data but also has a clue (a "pointer" or reference) telling you where the *next* piece of treasure is. They don\'t have fixed positions in memory.',
+            when_to_use: 'When you need a list that can grow or shrink very easily without reorganizing all other elements (inserting/deleting is fast if you have the pointer); when you don\'t need fast random access (you have to follow the clues from the beginning).',
+            example_code: `class Node:\n    def __init__(self, data):\n        self.data = data\n        self.next = None\n\nhead = Node(1)\nhead.next = Node(2)\n# To traverse:\ncurrent = head\nwhile current:\n    print(current.data)\n    current = current.next`,
+            learnMoreLink: 'https://www.programiz.com/dsa/linked-list'
+        },
+        {
+            name: 'Stacks (LIFO)',
+            icon: '📚',
+            description: 'Think of a stack of plates. You can only add a new plate to the top, and you can only take a plate from the top. It follows a "Last-In, First-Out" (LIFO) rule. In Python, you can use a `list` to implement a stack very easily, or `collections.deque` for more efficiency.',
+            key_operations: 'Push (add to top), Pop (remove from top), Peek (view top).',
+            when_to_use: 'Managing function calls; "Undo" functionality; checking for balanced parentheses; backtracking algorithms.',
+            example_code: `stack = []\nstack.append(1) # Push\nstack.append(2) # Push\nprint(stack[-1]) # Peek: Output: 2\nprint(stack.pop()) # Pop: Output: 2`,
+            learnMoreLink: 'https://www.geeksforgeeks.org/stack-data-structure-introduction-applications/'
+        },
+        {
+            name: 'Queues (FIFO)',
+            icon: '➡️',
+            description: 'Imagine a line at a cashier. The first person to join the line is the first person to be served. It follows a "First-In, First-Out" (FIFO) rule. In Python, `collections.deque` is the preferred way to implement a queue efficiently.',
+            key_operations: 'Enqueue (add to back), Dequeue (remove from front).',
+            when_to_use: 'Managing tasks in order (e.g., print queue, task scheduling); Breadth-First Search (BFS) in graphs.',
+            example_code: `from collections import deque\nqueue = deque([1, 2])\nqueue.append(3) # Enqueue\nprint(queue[0]) # Peek: Output: 1\nprint(queue.popleft()) # Dequeue: Output: 1`,
+            learnMoreLink: 'https://www.geeksforgeeks.org/queue-data-structure/'
+        },
+        {
+            name: 'Dictionaries (Hash Maps)',
+            icon: '🔑',
+            description: 'Python\'s `dict` (dictionary) is an incredibly powerful built-in data structure. It stores key-value pairs and uses a hashing mechanism to allow for very fast lookups, insertions, and deletions.',
+            when_to_use: 'When you need lightning-fast lookups, insertions, and deletions (average O(1) time); counting frequencies of items; creating mappings between data; implementing sets (Python\'s `set` type is built on hash tables).',
+            example_code: `my_dict = {"apple": 5, "banana": 12}\nprint(my_dict["apple"]) # Lookup: O(1) average\nmy_dict["orange"] = 7 # Insertion: O(1) average\ndel my_dict["banana"] # Deletion: O(1) average`,
+            learnMoreLink: 'https://www.programiz.com/python-programming/dictionary'
+        },
+        {
+            name: 'Binary Search Trees (BSTs)',
+            icon: '🌳',
+            description: 'A special type of binary tree where all values in the left child\'s branch are smaller than the parent, and all values in the right child\'s branch are larger. This structure enables efficient searching (O(log N) on average).',
+            when_to_use: 'For organizing data that needs to be quickly searchable, insertable, and deletable while maintaining order.',
+            example_code: `class TreeNode:\n    def __init__(self, val):\n        self.val = val\n        self.left = None\n        self.right = None\n\n# BST operations (insert, search) involve traversing left/right based on value.`,
+            learnMoreLink: 'https://www.geeksforgeeks.org/binary-search-tree-data-structure/'
+        },
+        {
+            name: 'Heaps (Priority Queues)',
+            icon: '🔺',
+            description: 'A special tree that makes it very fast to find the smallest (Min-Heap) or largest (Max-Heap) element. It\'s not necessarily sorted, but the "most important" element is always at the top. Python\'s `heapq` module provides heap functionality.',
+            when_to_use: 'Implementing priority queues; finding k-th smallest/largest elements; algorithms like Dijkstra\'s.',
+            example_code: `import heapq\nmin_heap = []\nheapq.heappush(min_heap, 4)\nheapq.heappush(min_heap, 1)\nheapq.heappush(min_heap, 7)\nsmallest = heapq.heappop(min_heap) # smallest will be 1`,
+            learnMoreLink: 'https://www.geeksforgeeks.org/heap-data-structure/'
+        },
+        {
+            name: 'Graphs',
+            icon: '🌐',
+            description: 'Imagine a network of cities connected by roads. The cities are "vertices" (or nodes), and the roads are "edges." Graphs can represent almost any kind of relationship or network.',
+            when_to_use: 'Modeling social networks (friends, followers); finding the shortest route between locations (GPS); analyzing dependencies (e.g., course prerequisites); representing electrical circuits, web pages and links.',
+            key_representation: 'Adjacency List (most common in Python: dictionary where keys are nodes and values are lists of neighbors); Adjacency Matrix (2D array).',
+            example_code: `graph = {\n  'A': ['B', 'C'],\n  'B': ['A', 'D'],\n  'C': ['A', 'E'],\n  'D': ['B'],\n  'E': ['C']\n}`,
+            learnMoreLink: 'https://www.geeksforgeeks.org/graph-data-structure-and-algorithms/'
+        },
+    ];
+
+    const paradigmData = [
+        {
+            name: 'Brute Force (Exhaustive Search)',
+            strategy: 'The "Try Everything" strategy. You literally try every possible solution or combination until you find the right one.',
+            characteristics: 'Simple to understand and implement, but often very inefficient. A good baseline for understanding the problem\'s core.',
+            when_to_use: 'For small input sizes, or as a starting point to understand the problem before optimizing.',
+            example_problems: ['Finding two numbers in a list that sum to a target (by checking all pairs).', 'Generating all permutations of a string.', 'The naive solution to "Maximum Difference Between Increasing Elements".'],
+            example_code: `def find_sum_pair_brute(nums, target):\n    for i in range(len(nums)):\n        for j in range(i + 1, len(nums)):\n            if nums[i] + nums[j] == target:\n                return (nums[i], nums[j])\n    return None`,
+            learnMoreLink: 'https://www.geeksforgeeks.org/brute-force-algorithm/'
+        },
+        {
+            name: 'Greedy Algorithms',
+            strategy: 'The "Best Now" strategy. At each step of the problem, you make the choice that looks "best" *right now*, hoping that these local optimal choices will lead to a globally optimal solution. You never go back and reconsider your past choices.',
+            characteristics: 'Often simple, intuitive, and very efficient (e.g., O(N) or O(N log N)). However, it doesn\'t always guarantee the globally optimal solution for all problems. You often need to prove its correctness.',
+            when_to_use: 'When problems exhibit the "greedy choice property" (a local optimal choice can be extended to a global optimal solution) and "optimal substructure" (an optimal solution to the problem contains optimal solutions to subproblems).',
+            example_problems: ['"Maximum Difference Between Increasing Elements" problem.', 'Fractional Knapsack (you can take fractions of items).', 'Dijkstra\'s Algorithm (shortest path in graphs with non-negative weights).', 'Making change with standard currency denominations.'],
+            example_code: `def make_change(coins, amount):\n    coins.sort(reverse=True) # Greedy choice: start with largest coin\n    count = 0\n    for coin in coins:\n        while amount >= coin:\n            amount -= coin\n            count += 1\n    return count`,
+            learnMoreLink: 'https://www.geeksforgeeks.org/greedy-algorithms/'
+        },
+        {
+            name: 'Divide and Conquer',
+            strategy: 'The "Break It Down" strategy. Break a big problem into smaller, similar sub-problems. Solve these smaller sub-problems recursively, and then combine their solutions to get the answer for the original big problem.',
+            characteristics: 'Often leads to elegant recursive solutions. Can be very efficient, especially when subproblems don\'t overlap significantly. Each sub-problem is independent.',
+            when_to_use: 'When a problem can be naturally split into two or more independent, smaller instances of the same problem.',
+            example_problems: ['Merge Sort', 'Quick Sort', 'Binary Search', 'Closest Pair of Points.'],
+            example_code: `def merge_sort(arr):\n    if len(arr) <= 1: return arr\n    mid = len(arr) // 2\n    left_half = arr[:mid]\n    right_half = arr[mid:]\n\n    left_sorted = merge_sort(left_half)\n    right_sorted = merge_sort(right_half)\n\n    # Merge logic (simplified for example)\n    merged = []\n    i = j = 0\n    while i < len(left_sorted) and j < len(right_sorted):\n        if left_sorted[i] < right_sorted[j]:\n            merged.append(left_sorted[i])\n            i += 1\n        else:\n            merged.append(right_sorted[j])\n            j += 1\n    merged.extend(left_sorted[i:])\n    merged.extend(right_sorted[j:])\n    return merged`,
+            learnMoreLink: 'https://www.geeksforgeeks.org/divide-and-conquer-algorithm-introduction/'
+        },
+        {
+            name: 'Dynamic Programming (DP)',
+            strategy: 'The "Smart Memo" strategy. Solving complex problems by breaking them into *overlapping subproblems* and storing the results of these subproblems to avoid recomputing them. It builds up solutions from smaller, already-solved subproblems.',
+            characteristics: 'Used for optimization problems. Requires "optimal substructure" (optimal solution to a problem contains optimal solutions to its subproblems) and "overlapping subproblems" (the same subproblems are solved multiple times).',
+            when_to_use: 'When you see a recursive solution that repeatedly calculates the same values, or when the problem can be broken down into a sequence of decisions where previous decisions affect future ones.',
+            example_problems: ['Calculating Fibonacci numbers efficiently.', '0/1 Knapsack Problem (items chosen fully or not at all).', 'Longest Common Subsequence.', 'Edit Distance.', 'Counting unique paths in a grid.'],
+            example_code: `from functools import lru_cache\n\n@lru_cache(maxsize=None) # Python decorator for memoization\ndef fib_memo(n):\n    if n <= 1:\n        return n\n    return fib_memo(n-1) + fib_memo(n-2)\n\ndef fib_tabulation(n):\n    if n <= 1: return n\n    dp = [0] * (n + 1)\n    dp[0], dp[1] = 0, 1\n    for i in range(2, n + 1):\n        dp[i] = dp[i-1] + dp[i-2]\n    return dp[n]`,
+            learnMoreLink: 'https://www.freecodecamp.org/news/what-is-dynamic-programming-a-beginners-guide/'
+        },
+        {
+            name: 'Backtracking',
+            strategy: 'The "Trial and Error with a Plan" strategy. A systematic way to explore all possible solutions to a problem by trying to build a solution incrementally. If a partial solution leads to a dead end or violates constraints, it "backtracks" (undoes the last choice) and tries another option.',
+            characteristics: 'Essentially an optimized brute-force. Often implemented using recursion. Explores a "state-space tree." Key is to "prune" (abandon) bad paths early to avoid unnecessary computation.',
+            when_to_use: 'For problems that involve finding all solutions or one solution to a constraint satisfaction problem (e.g., puzzles).',
+            example_problems: ['N-Queens Problem', 'Sudoku Solver', 'Generating permutations or combinations of elements.'],
+            example_code: `def solve_n_queens(n):\n    solutions = []\n    board = [-1] * n # board[row] = column of queen in that row\n\n    def backtrack(row):\n        if row == n: # All queens placed\n            solutions.append(draw_board(board))\n            return\n\n        for col in range(n):\n            if is_safe(board, row, col):\n                board[row] = col\n                backtrack(row + 1)\n                board[row] = -1 # Backtrack: remove queen\n\n    def is_safe(board, row, col):\n        for prev_row in range(row):\n            prev_col = board[prev_row]\n            # Check column, diagonal, anti-diagonal\n            if prev_col == col or \\\n               abs(row - prev_row) == abs(col - prev_col):\n                return False\n        return True\n\n    def draw_board(board_state):\n        drawn = []\n        for row_idx in range(n):\n            row_str = ["."]*n\n            row_str[board_state[row_idx]] = "Q"\n            drawn.append("".join(row_str))\n        return drawn\n\n    backtrack(0)\n    return solutions`,
+            learnMoreLink: 'https://www.geeksforgeeks.org/backtracking-algorithms/'
+        },
+        {
+            name: 'Graph Algorithms',
+            strategy: 'The "Network Navigator" strategy. These are specific algorithms designed to operate on **graphs** (networks of nodes and connections). They help you navigate, find paths, identify relationships, and analyze networks.',
+            characteristics: 'Essential for problems that can be modeled as networks. Graph representation (Adjacency List/Matrix) is key.',
+            when_to_use: 'Modeling social networks, finding shortest routes (GPS), analyzing dependencies (e.g., course prerequisites), representing electrical circuits, web pages and links.',
+            example_problems: ['Breadth-First Search (BFS)', 'Depth-First Search (DFS)', 'Dijkstra\'s Algorithm', 'Minimum Spanning Tree (Prim\'s/Kruskal\'s)', 'Topological Sort.'],
+            example_code: `from collections import deque\n\ndef bfs(graph, start_node):\n    visited = set()\n    queue = deque([start_node])\n    visited.add(start_node)\n\n    while queue:\n        current_node = queue.popleft()\n        print(current_node) # Process the node\n\n        for neighbor in graph.get(current_node, []):\n            if neighbor not in visited:\n                visited.add(neighbor)\n                queue.append(neighbor)\n\ndef dfs(graph, start_node, visited=None):\n    if visited is None: visited = set()\n    visited.add(start_node)\n    print(start_node) # Process the node\n\n    for neighbor in graph.get(start_node, []):\n        if neighbor not in visited:\n            dfs(graph, neighbor, visited)`,
+            learnMoreLink: 'https://www.geeksforgeeks.org/graph-data-structure-and-algorithms/'
+        },
+        {
+            name: 'Searching Algorithms',
+            strategy: 'The "Find It Fast" strategy. Algorithms specifically designed to locate a particular item within a collection of data.',
+            characteristics: 'Efficiency depends heavily on whether the data is sorted.',
+            when_to_use: 'Whenever you need to locate an element quickly. Binary Search is crucial for sorted data or searching on an "answer space".',
+            example_problems: ['Linear Search (checks each element sequentially, O(N))', 'Binary Search (efficiently finds an element in a *sorted* array, O(log N)).'],
+            example_code: `def binary_search(arr, target):\n    left, right = 0, len(arr) - 1\n    while left <= right:\n        mid = left + (right - left) // 2\n        if arr[mid] == target:\n            return mid\n        elif arr[mid] < target:\n            left = mid + 1\n        else:\n            right = mid - 1\n    return -1 # Not found`,
+            learnMoreLink: 'https://www.khanacademy.org/computing/computer-science/algorithms/binary-search/a/binary-search'
+        },
+        {
+            name: 'Sorting Algorithms',
+            strategy: 'The "Order Please" strategy. Arranging elements in a specific order (numerical, alphabetical, etc.).',
+            characteristics: 'Many problems become much easier to solve once the data is sorted (e.g., using two pointers, binary search). Python\'s built-in `sort()` and `sorted()` are highly optimized.',
+            when_to_use: 'When the problem constraints suggest that sorting the input will simplify subsequent processing, or when the problem explicitly requires ordered output.',
+            example_problems: ['Merge Sort (O(N log N))', 'Quick Sort (O(N log N) average)', 'Heap Sort (O(N log N)).'],
+            example_code: `my_list = [5, 2, 8, 1, 9]\nmy_list.sort() # Sorts in-place: [1, 2, 5, 8, 9]\n\nsorted_list = sorted([5, 2, 8, 1, 9]) # Returns new sorted list: [1, 2, 5, 8, 9]`,
+            learnMoreLink: 'https://www.geeksforgeeks.org/sorting-algorithms/'
+        },
+    ];
+
+    const tricksData = [
+        {
+            name: 'Recursion',
+            icon: '🔄',
+            what_is: 'A function that calls itself to solve a smaller version of the same problem. Think of it as a set of Russian nesting dolls, where each doll contains a smaller version of itself.',
+            how_it_works: 'It needs a **base case** (the smallest doll, which it can solve directly) and a **recursive step** (how it breaks down the bigger problem into smaller ones).',
+            why_useful: 'Foundation for Divide and Conquer, Backtracking, and often used in Dynamic Programming (memoization). Can lead to elegant solutions.',
+            caution: 'Watch out for infinite recursion (no base case), which leads to "stack overflow" errors in Python. Be aware of redundant computations if not combined with memoization (solved by DP).',
+            example_code: `def factorial(n):\n    if n == 0: # Base case\n        return 1\n    else: # Recursive step\n        return n * factorial(n-1)`,
+            learnMoreLink: 'https://www.programiz.com/dsa/recursion'
+        },
+        {
+            name: 'Bit Manipulation',
+            icon: '🤖',
+            what_is: 'Working directly with the individual bits (0s and 1s) that make up numbers. You use special operators like `&` (AND), `|` (OR), `^` (XOR), `~` (NOT), `<<` (left shift), `>>` (right shift).',
+            why_useful: 'Extremely fast, space-efficient, and often used for specific problem types (e.g., set operations, power of 2 checks, optimizing certain DP states).',
+            example_code: `# Check if the Nth bit is set (0-indexed)\ndef is_bit_set(num, n):\n    return (num >> n) & 1\n\n# Set the Nth bit\ndef set_bit(num, n):\n    return num | (1 << n)\n\n# Check if a number is a power of two\ndef is_power_of_two(n):\n    return (n > 0) and ((n & (n - 1)) == 0)`,
+            learnMoreLink: 'https://www.geeksforgeeks.org/bit-manipulation-in-cpp/'
+        },
+        {
+            name: 'Two Pointers',
+            icon: '↔️',
+            what_is: 'A technique where you use two pointers (variables holding indices or references) to traverse an array or linked list. These pointers can move at different speeds, from opposite ends, or in the same direction.',
+            why_useful: 'Efficiently solves problems involving finding pairs, reversing, removing duplicates, or processing sorted arrays/linked lists.',
+            example_code: `# Check if a list is a palindrome using two pointers\ndef is_palindrome(s):\n    left, right = 0, len(s) - 1\n    while left < right:\n        if s[left] != s[right]:\n            return False\n        left += 1\n        right -= 1\n    return True`,
+            learnMoreLink: 'https://www.educative.io/courses/grokking-the-coding-interview/R1MB7D3x5zr'
+        },
+        {
+            name: 'Sliding Window',
+            icon: '🖼️',
+            what_is: 'A technique used on arrays or strings to analyze a contiguous sub-part ("window") of the data. The window can be of a fixed size or variable size, and it "slides" (moves) across the data.',
+            why_useful: 'Efficiently finds maximum/minimum sums, averages, or counts of sub-arrays/sub-strings that meet certain criteria.',
+            example_code: `# Example: Max sum of a subarray of size k\ndef max_subarray_sum(nums, k):\n    max_sum = 0\n    window_sum = 0\n    for i in range(len(nums)):\n        window_sum += nums[i]\n        if i >= k - 1:\n            max_sum = max(max_sum, window_sum)\n            window_sum -= nums[i - (k - 1)] # Slide window by removing leftmost element\n    return max_sum`,
+            learnMoreLink: 'https://www.geeksforgeeks.org/window-sliding-technique/'
+        },
+        {
+            name: 'Prefix Sums',
+            icon: '➕',
+            what_is: 'A technique where you precompute an array (the "prefix sum array") where each element stores the sum of all elements in the original array up to that point.',
+            why_useful: 'Allows you to find the sum of any subarray in O(1) time, instead of O(N). Useful for efficiently answering many range-sum queries.',
+            example_code: `def compute_prefix_sums(arr):\n    prefix_sum = [0] * len(arr)\n    if not arr: return []\n    prefix_sum[0] = arr[0]\n    for i in range(1, len(arr)):\n        prefix_sum[i] = prefix_sum[i-1] + arr[i]\n    return prefix_sum\n\n# Sum of subarray from index i to j (inclusive):\n# sum(arr[i:j+1]) = prefix_sum[j] - (prefix_sum[i-1] if i > 0 else 0)`,
+            learnMoreLink: 'https://www.geeksforgeeks.org/prefix-sum-array-in-cpp-with-examples/'
+        },
+        {
+            name: 'Mathematical Algorithms / Number Theory',
+            icon: '🔢',
+            what_is: 'Algorithms that rely heavily on mathematical principles. Often used in problems involving numbers, primes, divisibility, etc.',
+            why_useful: 'Essential for problems that explicitly involve number properties, large number calculations, or combinatorics.',
+            example_code: `# Sieve of Eratosthenes (find primes up to n)\ndef sieve_of_eratosthenes(n):\n    primes = [True] * (n + 1)\n    primes[0] = primes[1] = False\n    p = 2\n    while p * p <= n:\n        if primes[p]:\n            for multiple in range(p * p, n + 1, p):\n                primes[multiple] = False\n        p += 1\n    return [i for i, is_prime in enumerate(primes) if is_prime]\n\n# Euclidean Algorithm (GCD) - Python has math.gcd()\ndef gcd(a, b):\n    while b:\n        a, b = b, a % b\n    return a`,
+            learnMoreLink: 'https://www.geeksforgeeks.org/basic-number-theory-for-competitive-programming/'
+        },
+    ];
+
+    const strategyData = [
+        {
+            icon: '🕵️‍♀️',
+            title: 'Step 1: Understand the Problem (The Detective Phase)',
+            description: 'Read carefully. Identify inputs, outputs, constraints, and edge cases. Work through the provided examples manually to solidify your understanding. If no examples are given, create your own simple ones. Pay close attention to constraints on input size (N) and value ranges, as these are CRITICAL for deciding your algorithm\'s efficiency.',
+            tips: {
+                title: 'Rule of Thumb for N vs. Time Complexity:',
+                items: [
+                    'N up to ~10-12: O(N!), O($2^N$) might pass (Brute force, Backtracking).',
+                    'N up to ~20-25: O($2^N$) might barely pass.',
+                    'N up to ~500: O($N^3$) is usually too slow, O($N^2$) might pass.',
+                    'N up to ~10^4 - 10^5: You typically need O(N log N) or O(N).',
+                    'N up to ~10^6 - 10^7: Definitely O(N) or O(N log N).'
+                ]
+            }
+        },
+        {
+            icon: '💡',
+            title: 'Step 2: Brainstorm Approaches (The Idea Generation Phase)',
+            description: 'Start with a Brute Force solution to understand the core logic and establish a baseline. Don\'t be afraid to write it down or think it through. Then, look for patterns and connections to standard algorithms or data structures you know.',
+            tips: {
+                title: 'Ask Yourself:',
+                items: [
+                    'Is it about finding something in a `list`? -> Searching, maybe sorting first.',
+                    'Does it involve relationships between things? -> Graphs.',
+                    'Does it involve building up a solution from smaller parts? -> DP, or sometimes recursion.',
+                    'Does it involve making the "best" local choice? -> Greedy.',
+                    'Does it involve trying many combinations? -> Backtracking, or Brute Force.'
+                ]
+            }
+        },
+        {
+            icon: '🎯',
+            title: 'Step 3: Choose Your Paradigm & Data Structures (The Strategy Phase)',
+            description: 'Based on your brainstorming and complexity analysis, pick the most suitable algorithm paradigm. Decide which data structures will help you implement your chosen paradigm efficiently. For example, if you chose BFS, you know you\'ll need a `collections.deque`. If it\'s a frequency count, a Python `dict` is likely good.',
+            learnMoreLink: 'https://www.geeksforgeeks.org/top-algorithms-and-data-structures-for-competitive-programming/'
+        },
+        {
+            icon: '🏗️',
+            title: 'Step 4: Design the Algorithm (The Blueprint Phase)',
+            description: 'Write down a high-level plan or pseudo-code. Refine the details: How will loops work? What variables do you need? How will you handle edge cases you identified? Think about the "state" – what information do you need to carry from one step to the next (e.g., `min_so_far` in "Maximum Difference Between Increasing Elements").',
+            learnMoreLink: 'https://www.freecodecamp.org/news/how-to-design-an-algorithm/'
+        },
+        {
+            icon: '🧑‍💻',
+            title: 'Step 5: Implement the Code (The Building Phase)',
+            description: 'Write your code based on your detailed design. Focus on clarity by writing clean, readable Pythonic code. Use meaningful variable names (`snake_case`) and add comments to explain complex logic, choices, or critical parts of your algorithm. Modularize your code by creating smaller functions where appropriate.',
+        },
+        {
+            icon: '✅',
+            title: 'Step 6: Test Your Solution (The Quality Assurance Phase)',
+            description: 'Run your code against the provided examples. Crucially, create your own custom test cases, especially for edge cases (e.g., empty `list` (`[]`), single element `list` (`[5]`), all same elements (`[7, 7, 7]`), elements in reverse order (`[5, 4, 3, 2, 1]`), very large/small numbers). If tests fail, use `print()` statements or a Python debugger (`pdb`) to trace your code\'s execution and identify where things go wrong.',
+        },
+        {
+            icon: '📈',
+            title: 'Step 7: Analyze and Optimize (The Improvement Phase)',
+            description: 'After implementing, double-check your time and space complexity. Does it match your expectations? Review the constraints. If your current complexity is too slow (e.g., O($N^2$) for N = $10^5$), go back to Step 2 or 3. Can you use a different data structure? Is there a more advanced algorithm paradigm that applies? Could a simple trick like Two Pointers or Prefix Sums optimize a part of your solution?',
+        },
+    ];
+
+    // --- Render Functions ---
+    function renderBigOCards() {
+        const container = document.getElementById('big-o-cards');
+        container.innerHTML = bigOData.map(item => `
+            <div class="content-card p-6 flex flex-col">
+                <h4 class="text-xl font-bold mb-2" style="color: ${item.color};">${item.name}</h4>
+                <p class="text-sm text-stone-500 italic mb-3">"${item.analogy}"</p>
+                <p class="text-stone-700 mb-2 font-semibold">Meaning:</p>
+                <p class="text-stone-600 mb-4">${item.meaning}</p>
+                <p class="text-stone-700 mb-2 font-semibold">Why it's important:</p>
+                <p class="text-stone-600 mb-4">${item.why_important}</p>
+                ${item.example ? `
+                    <p class="text-stone-700 mb-2 font-semibold">Example (Python):</p>
+                    <div class="code-block text-sm mb-4">
+                        <button class="copy-btn">Copy</button>
+                        <pre><code>${item.example}</code></pre>
+                    </div>
+                ` : ''}
+                <p class="mt-auto text-stone-700 text-sm"><a href="${item.learnMoreLink}" target="_blank" class="text-teal-600 hover:underline">Learn More about ${item.name.split(' - ')[0]}</a></p>
+            </div>
+        `).join('');
+    }
+
+    function renderDataStructures() {
+        const container = document.getElementById('data-structures-grid');
+        container.innerHTML = dsData.map(item => `
+            <div class="content-card p-6 flex flex-col">
+                <h4 class="text-2xl font-bold mb-3"><span class="mr-3">${item.icon}</span>${item.name}</h4>
+                <p class="text-stone-600 mb-2 font-semibold">What it is:</p>
+                <p class="text-stone-600 mb-4">${item.description}</p>
+                <p class="text-stone-600 mb-2 font-semibold">When to use:</p>
+                <p class="text-stone-600 mb-4">${item.when_to_use}</p>
+                ${item.key_techniques ? `<p class="text-stone-600 mb-2 font-semibold">Key Techniques:</p><p class="text-stone-600 mb-4">${item.key_techniques}</p>` : ''}
+                ${item.key_operations ? `<p class="text-stone-600 mb-2 font-semibold">Key Operations:</p><p class="text-stone-600 mb-4">${item.key_operations}</p>` : ''}
+                ${item.key_representation ? `<p class="text-stone-600 mb-2 font-semibold">Key Representation:</p><p class="text-stone-600 mb-4">${item.key_representation}</p>` : ''}
+                <p class="text-stone-700 mb-2 font-semibold">Example (Python):</p>
+                <div class="code-block text-sm mb-4">
+                    <button class="copy-btn">Copy</button>
+                    <pre><code>${item.example_code}</code></pre>
+                </div>
+                <p class="mt-auto text-stone-700 text-sm"><a href="${item.learnMoreLink}" target="_blank" class="text-teal-600 hover:underline">Learn More about ${item.name}</a></p>
+            </div>
+        `).join('');
+    }
+
+    function renderParadigms() {
+        const container = document.getElementById('paradigms-accordion');
+        container.innerHTML = paradigmData.map(item => `
+            <div class="content-card overflow-hidden">
+                <button class="accordion-toggle w-full text-left p-6 flex justify-between items-center hover:bg-stone-50 transition">
+                    <h4 class="text-2xl font-bold text-teal-700">${item.name}</h4>
+                    <span class="text-2xl text-teal-700 transform transition-transform duration-300">▼</span>
+                </button>
+                <div class="accordion-content">
+                    <div class="p-6 pt-0">
+                        <p class="text-stone-600 mb-2 font-semibold">What's the strategy?</p>
+                        <p class="text-stone-600 mb-4">${item.strategy}</p>
+                        <p class="text-stone-600 mb-2 font-semibold">Characteristics/When to use:</p>
+                        <p class="text-stone-600 mb-4">${item.characteristics}</p>
+                        <p class="text-stone-600 mb-2 font-semibold">When to use:</p>
+                        <p class="text-stone-600 mb-4">${item.when_to_use}</p>
+                        <p class="text-stone-600 mb-2 font-semibold">Example Problems:</p>
+                        <ul class="list-disc list-inside text-stone-600 mb-4">
+                            ${item.example_problems.map(prob => `<li>${prob}</li>`).join('')}
+                        </ul>
+                        <p class="text-stone-700 mb-2 font-semibold">Example (Python):</p>
+                        <div class="code-block text-sm mb-4">
+                            <button class="copy-btn">Copy</button>
+                            <pre><code>${item.example_code}</code></pre>
+                        </div>
+                        <p class="text-stone-700 text-sm"><a href="${item.learnMoreLink}" target="_blank" class="text-teal-600 hover:underline">Learn More about ${item.name}</a></p>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    function renderTricks() {
+        const container = document.getElementById('tricks-grid');
+        container.innerHTML = tricksData.map(item => `
+            <div class="content-card p-6 flex flex-col">
+                <h4 class="text-2xl font-bold mb-3"><span class="mr-3">${item.icon}</span>${item.name}</h4>
+                <p class="text-stone-600 mb-2 font-semibold">What it is:</p>
+                <p class="text-stone-600 mb-4">${item.what_is}</p>
+                ${item.how_it_works ? `<p class="text-stone-600 mb-2 font-semibold">How it works:</p><p class="text-stone-600 mb-4">${item.how_it_works}</p>` : ''}
+                <p class="text-stone-600 mb-2 font-semibold">Why it's useful:</p>
+                <p class="text-stone-600 mb-4">${item.why_useful}</p>
+                ${item.caution ? `<p class="text-red-500 mb-2 font-semibold">Caution:</p><p class="text-red-600 mb-4">${item.caution}</p>` : ''}
+                <p class="text-stone-700 mb-2 font-semibold">Example (Python):</p>
+                <div class="code-block text-sm mb-4">
+                    <button class="copy-btn">Copy</button>
+                    <pre><code>${item.example_code}</code></pre>
+                </div>
+                <p class="mt-auto text-stone-700 text-sm"><a href="${item.learnMoreLink}" target="_blank" class="text-teal-600 hover:underline">Learn More about ${item.name}</a></p>
+            </div>
+        `).join('');
+    }
+
+    function renderStrategy() {
+        const container = document.getElementById('strategy-steps');
+        container.innerHTML = strategyData.map(item => `
+            <div class="flex items-start">
+                <div class="flex-shrink-0 bg-teal-500 rounded-full h-12 w-12 flex items-center justify-center text-2xl text-white mr-4">${item.icon}</div>
+                <div class="content-card flex-grow p-4">
+                    <h4 class="text-xl font-bold text-stone-800 mb-2">${item.title}</h4>
+                    <p class="text-stone-600 mb-4">${item.description}</p>
+                    ${item.tips ? `
+                        <p class="text-stone-700 mb-2 font-semibold">${item.tips.title}</p>
+                        <ul class="list-disc list-inside text-stone-600 mb-4">
+                            ${item.tips.items.map(tip => `<li>${tip}</li>`).join('')}
+                        </ul>
+                    ` : ''}
+                    ${item.learnMoreLink ? `
+                        <p class="text-stone-700 text-sm"><a href="${item.learnMoreLink}" target="_blank" class="text-teal-600 hover:underline">Learn More</a></p>
+                    ` : ''}
+                </div>
+            </div>
+        `).join('');
+    }
+
+    // --- Chart.js ---
+    function renderBigOChart() {
+        const ctx = document.getElementById('bigOChart').getContext('2d');
+        const labels = Array.from({ length: 101 }, (_, i) => i); // Inputs from 0 to 100
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [
+                    { label: 'O(1)', data: labels.map(() => 5), borderColor: '#2dd4bf', tension: 0.1, fill: false },
+                    { label: 'O(log N)', data: labels.map(n => n > 0 ? Math.log2(n) * 10 : 0), borderColor: '#34d399', tension: 0.1, fill: false },
+                    { label: 'O(N)', data: labels.map(n => n), borderColor: '#facc15', tension: 0.1, fill: false },
+                    { label: 'O(N log N)', data: labels.map(n => n > 0 ? n * Math.log2(n) / 5 : 0), borderColor: '#fb923c', tension: 0.1, fill: false },
+                    { label: 'O(N²)', data: labels.map(n => n * n / 20), borderColor: '#f87171', tension: 0.1, fill: false },
+                    { label: 'O(2ⁿ)', data: labels.map(n => n < 15 ? Math.pow(2, n) / 1000 : Infinity), borderColor: '#ef4444', tension: 0.1, fill: false, hidden: false, pointRadius: 0 }, // Capped for visibility
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: { display: true, text: 'Visualizing Time Complexity Growth', font: { size: 18 } },
+                    tooltip: { mode: 'index', intersect: false }
+                },
+                scales: {
+                    y: { beginAtZero: true, title: { display: true, text: 'Relative Operations' }, max: 200 }, // Cap Y-axis for clarity
+                    x: { title: { display: true, text: 'Input Size (N)' } }
+                },
+            }
+        });
+    }
+
+    // --- Interactivity ---
+    function setupInteractivity() {
+        // Accordion
+        document.querySelectorAll('.accordion-toggle').forEach(button => {
+            button.addEventListener('click', () => {
+                const content = button.nextElementSibling;
+                const arrow = button.querySelector('span');
+                const isExpanded = content.style.maxHeight && content.style.maxHeight !== '0px';
+
+                // Close all other accordions
+                document.querySelectorAll('.accordion-content').forEach(c => c.style.maxHeight = null);
+                document.querySelectorAll('.accordion-toggle span').forEach(a => a.style.transform = 'rotate(0deg)');
+
+                // Toggle current accordion
+                if (!isExpanded) {
+                    content.style.maxHeight = content.scrollHeight + "px";
+                    arrow.style.transform = 'rotate(180deg)';
+                }
+            });
+        });
+
+        // Copy button
+        document.body.addEventListener('click', function(event) {
+            if (event.target.classList.contains('copy-btn')) {
+                const button = event.target;
+                const codeElement = button.nextElementSibling.querySelector('code');
+                if (codeElement) {
+                    const code = codeElement.textContent;
+                    navigator.clipboard.writeText(code).then(() => {
+                        button.textContent = 'Copied!';
+                        setTimeout(() => { button.textContent = 'Copy'; }, 2000);
+                    }).catch(err => {
+                        console.error('Failed to copy text: ', err);
+                        button.textContent = 'Error!';
+                        setTimeout(() => { button.textContent = 'Copy'; }, 2000);
+                    });
+                }
+            }
+        });
+
+        // Sidebar active link highlighting on scroll
+        const sections = document.querySelectorAll('section');
+        const navLinks = document.querySelectorAll('#nav-menu a');
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    navLinks.forEach(link => {
+                        link.classList.remove('active');
+                    });
+                    const activeLink = document.querySelector(`#nav-menu a[href="#${entry.target.id}"]`);
+                    if (activeLink) {
+                        activeLink.classList.add('active');
+                    }
+                }
+            });
+        }, { rootMargin: '-30% 0px -70% 0px' });
+
+        sections.forEach(section => observer.observe(section));
+
+        // Mobile menu toggle
+        const menuToggle = document.getElementById('menu-toggle');
+        const sidebar = document.getElementById('sidebar');
+        menuToggle.addEventListener('click', () => {
+            sidebar.classList.toggle('-translate-x-full');
+        });
+
+        // Close mobile menu when a link is clicked
+        navLinks.forEach(link => {
+            link.addEventListener('click', () => {
+                if (window.innerWidth < 768) {
+                    sidebar.classList.add('-translate-x-full');
+                }
+            });
+        });
+    }
+
+    // --- Initial Render ---
+    renderBigOCards();
+    renderBigOChart();
+    renderDataStructures();
+    renderParadigms();
+    renderTricks();
+    renderStrategy();
+    setupInteractivity();
+
+});
+</script>
+</body>
+</html>
+�
