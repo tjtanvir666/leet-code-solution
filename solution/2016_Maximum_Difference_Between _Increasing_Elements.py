@@ -77,6 +77,18 @@ print(obj.maximumDifference([
 print("-----------optimized solution-------")
 ## Optimized Solution
 class SolutionOptimized(object):
+    """
+    :type nums: List[int]
+    :rtype: int
+    
+    # Algorithm: O(n) Maximum Difference Between Increasing Elements
+    # 1. Set min_val as the first element of nums.
+    # 2. Initialize max_diff as -1 to indicate no valid pair found yet.
+    # 3. For each num in the list starting from the second element:
+    #       a. If num is greater than min_val, update max_diff with the larger value between max_diff and (num - min_val).
+    #       b. Otherwise, update min_val to num (new lowest value found).
+    # 4. Return max_diff as the result.
+    """
     def maximumDifference(self, nums):
         min_val = nums[0]
         max_diff = -1
@@ -141,8 +153,6 @@ print(obj2.maximumDifference([
     65, 4, 6547, 8, 56, 41, 16, 4876, 897, 87, 6, 4565, 456, 46, 5467, 97,
     97988654
 ]))
-
-
     7, 1, 5, 44654, 65, 4, 6547, 8, 56, 41, 16, 4876, 897, 87, 6, 4565, 456, 46,
     5467, 97, 97, 98, 8, 654, 65, 654, 6, 74987, 897, 987, 98, 7987, 78, 8, 9,
     87, 654, 654, 454, 67, 4897, 987, 9, 86, 7465, 465, 67, 867, 987, 86, 7435,
